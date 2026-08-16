@@ -3,7 +3,7 @@ window.ask67AI = async function(input, messages = []) {
   const { data: { session } } = await client.auth.getSession();
   if (!session?.access_token) throw new Error('Sign in to use 67 AI.');
 
-  const response = await fetch('/.netlify/functions/ai', {
+  const response = await fetch('/api/ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
