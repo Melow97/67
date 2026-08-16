@@ -1,65 +1,11 @@
-const money67 = value => {
-  if (value == null || Number.isNaN(Number(value))) return '—';
-  const n = Number(value);
-  if (Math.abs(n) >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
-  if (Math.abs(n) >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
-  if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
-  if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(2) + 'K';
-  return '$' + n.toLocaleString(undefined, { maximumFractionDigits: 6 });
-};
-
-const pct67 = value => {
-  if (value == null || Number.isNaN(Number(value))) return '—';
-  const n = Number(value);
-  return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
-};
-
-function cryptoRow67(coin) {
-  const change = coin.price_change_percentage_24h;
-  const cls = Number(change) >= 0 ? 'cryptoUp' : 'cryptoDown';
-  return `<div class="cryptoRow67">
-    <div class="cryptoRank67">${coin.market_cap_rank ?? '—'}</div>
-    <img src="${coin.image || ''}" alt="" loading="lazy" width="32" height="32">
-    <div class="cryptoName67"><b>${coin.name}</b><small>${String(coin.symbol || '').toUpperCase()}</small></div>
-    <div class="cryptoPrice67"><b>${money67(coin.current_price)}</b><span class="${cls}">${pct67(change)}</span></div>
-    <div class="cryptoCap67">${money67(coin.market_cap)}</div>
-  </div>`;
-}
-
-async function load67CryptoDashboard() {
-  const root = document.getElementById('cryptoDashboard');
-  if (!root) return;
-  root.innerHTML = '<div class="cryptoLoading67">Loading live market intelligence…</div>';
-  try {
-    const response = await fetch('/api/crypto?view=dashboard', { headers: { accept: 'application/json' } });
-    if (!response.ok) throw new Error('Crypto API unavailable');
-    const payload = await response.json();
-    const markets = payload.markets || [];
-    const global = payload.global || {};
-    const trending = payload.trending || [];
-    const gainers = payload.gainers || [];
-    const losers = payload.losers || [];
-
-    root.innerHTML = `
-      <div class="cryptoHero67">
-        <div><span class="cryptoEyebrow67">LIVE MARKET INTELLIGENCE</span><h2>Crypto, right now.</h2><p>Prices, market momentum, movers and what the crypto crowd is searching for.</p></div>
-        <div class="cryptoStats67">
-          <div><small>Total market cap</small><b>${money67(global.total_market_cap?.usd)}</b></div>
-          <div><small>24h volume</small><b>${money67(global.total_volume?.usd)}</b></div>
-          <div><small>BTC dominance</small><b>${global.market_cap_percentage?.btc ? Number(global.market_cap_percentage.btc).toFixed(1) + '%' : '—'}</b></div>
-        </div>
-      </div>
-      <div class="cryptoGrid67">
-        <section class="cryptoPanel67"><div class="cryptoTitle67"><b>Top markets</b><span>Market cap</span></div>${markets.slice(0, 12).map(cryptoRow67).join('')}</section>
-        <section class="cryptoPanel67"><div class="cryptoTitle67"><b>🔥 Gainers</b><span>24h</span></div>${gainers.map(cryptoRow67).join('')}</section>
-        <section class="cryptoPanel67"><div class="cryptoTitle67"><b>📉 Losers</b><span>24h</span></div>${losers.map(cryptoRow67).join('')}</section>
-        <section class="cryptoPanel67"><div class="cryptoTitle67"><b>🧠 Crypto searches</b><span>Trending</span></div>${trending.slice(0, 10).map((item, i) => `<div class="trendCoin67"><span>${i + 1}</span><img src="${item.item?.thumb || ''}" width="28" height="28" alt=""><b>${item.item?.name || 'Unknown'}</b><small>${String(item.item?.symbol || '').toUpperCase()}</small></div>`).join('')}</section>
-      </div>
-      <div class="cryptoFooter67">Data supplied by CoinGecko · refreshed through 67's server-side cache · market data is informational, not financial advice.</div>`;
-  } catch (error) {
-    console.error(error);
-    root.innerHTML = '<div class="cryptoError67">Live crypto data is temporarily unavailable. 67 will retry automatically.</div>';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', load67CryptoDashboard);
+const money67=value=>{if(value==null||Number.isNaN(Number(value)))return'—';const n=Number(value);if(Math.abs(n)>=1e12)return'$'+(n/1e12).toFixed(2)+'T';if(Math.abs(n)>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(Math.abs(n)>=1e6)return'$'+(n/1e6).toFixed(2)+'M';if(Math.abs(n)>=1e3)return'$'+(n/1e3).toFixed(2)+'K';return'$'+n.toLocaleString(undefined,{maximumFractionDigits:6})};
+const pct67=v=>v==null||Number.isNaN(Number(v))?'—':`${Number(v)>=0?'+':''}${Number(v).toFixed(2)}%`;
+const esc67=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function cryptoRow67(c){const ch=c.price_change_percentage_24h,cls=Number(ch)>=0?'cryptoUp67':'cryptoDown67';return `<div class="cryptoRow67"><div>${c.market_cap_rank??'—'}</div><img src="${esc67(c.image||'')}" alt="" loading="lazy" width="32" height="32"><div class="cryptoName67"><b>${esc67(c.name)}</b><small>${esc67(String(c.symbol||'').toUpperCase())}</small></div><div class="cryptoPrice67"><b>${money67(c.current_price)}</b><span class="${cls}">${pct67(ch)}</span></div><div class="cryptoCap67">${money67(c.market_cap)}</div></div>`}
+function trend67(item,i){return `<div class="trendCoin67"><span>${i+1}</span><img src="${esc67(item.item?.thumb||'')}" width="28" height="28" alt=""><b>${esc67(item.item?.name||'Unknown')}</b><small>${esc67(String(item.item?.symbol||'').toUpperCase())}</small></div>`}
+function category67(c){return `<div class="category67"><div><b>${esc67(c.name)}</b><small> ${money67(c.market_cap)} market cap</small></div><span>${pct67(c.market_cap_change_24h)}</span></div>`}
+let crypto67State=null;let crypto67Timer=null;
+function tabs67(active){return `<div class="tabs67"><button class="${active==='overview'?'active':''}" data-tab="overview">Overview</button><button class="${active==='markets'?'active':''}" data-tab="markets">Markets</button><button class="${active==='movers'?'active':''}" data-tab="movers">🔥 Movers</button><button class="${active==='trending'?'active':''}" data-tab="trending">🧠 Trending</button><button class="${active==='categories'?'active':''}" data-tab="categories">Categories</button></div>`}
+function renderCrypto67(tab='overview'){const root=document.getElementById('cryptoDashboard');if(!root||!crypto67State)return;const{markets=[],gainers=[],losers=[],trending=[],categories=[],global={}}=crypto67State;let body='';if(tab==='overview')body=`<div class="cryptoGrid67"><section class="cryptoPanel67"><div class="cryptoTitle67"><b>Top markets</b><span>Market cap</span></div>${markets.slice(0,12).map(cryptoRow67).join('')}</section><section class="cryptoPanel67"><div class="cryptoTitle67"><b>🧠 Market pulse</b><span>Live</span></div><div class="category67"><b>BTC dominance</b><b>${global.market_cap_percentage?.btc?Number(global.market_cap_percentage.btc).toFixed(1)+'%':'—'}</b></div><div class="category67"><b>Active cryptocurrencies</b><b>${global.active_cryptocurrencies?.toLocaleString?.()||'—'}</b></div><div class="category67"><b>Markets</b><b>${global.markets?.toLocaleString?.()||'—'}</b></div><div class="category67"><b>Market cap change</b><b>${pct67(global.market_cap_change_percentage_24h_usd)}</b></div></section></div>`;if(tab==='markets')body=`<section class="cryptoPanel67"><div class="cryptoTitle67"><b>Top 50 markets</b><span>USD · market cap</span></div>${markets.map(cryptoRow67).join('')}</section>`;if(tab==='movers')body=`<div class="cryptoGrid67"><section class="cryptoPanel67"><div class="cryptoTitle67"><b>🔥 Biggest gainers</b><span>24h</span></div>${gainers.map(cryptoRow67).join('')}</section><section class="cryptoPanel67"><div class="cryptoTitle67"><b>📉 Biggest losers</b><span>24h</span></div>${losers.map(cryptoRow67).join('')}</section></div>`;if(tab==='trending')body=`<section class="cryptoPanel67"><div class="cryptoTitle67"><b>🧠 CoinGecko trending searches</b><span>Discovery</span></div>${trending.slice(0,20).map(trend67).join('')||'<div class="cryptoLoading67">No trending data returned.</div>'}</section>`;if(tab==='categories')body=`<section class="cryptoPanel67"><div class="cryptoTitle67"><b>Market categories</b><span>By market cap</span></div>${categories.slice(0,40).map(category67).join('')}</section>`;root.innerHTML=`<div class="cryptoHero67"><span class="cryptoEyebrow67">LIVE MARKET INTELLIGENCE</span><h2>Crypto, right now.</h2><p>Prices, momentum, movers, discovery and market structure — all inside one 67 panel.</p><div class="cryptoStats67"><div><small>Total market cap</small><b>${money67(global.total_market_cap?.usd)}</b></div><div><small>24h volume</small><b>${money67(global.total_volume?.usd)}</b></div><div><small>BTC dominance</small><b>${global.market_cap_percentage?.btc?Number(global.market_cap_percentage.btc).toFixed(1)+'%':'—'}</b></div><div><small>24h global change</small><b>${pct67(global.market_cap_change_percentage_24h_usd)}</b></div></div></div>${tabs67(tab)}<div class="view67">${body}</div><div class="cryptoFooter67">Data supplied by CoinGecko · cached server-side by 67 · informational only, not financial advice.</div>`;root.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>renderCrypto67(b.dataset.tab)))}
+async function load67CryptoDashboard(force=false){const root=document.getElementById('cryptoDashboard');if(!root)return;const status=document.getElementById('cryptoStatus');if(!force&&!crypto67State)root.innerHTML='<div class="cryptoLoading67">Connecting to CoinGecko…</div>';try{const response=await fetch('/api/crypto?view=dashboard'+(force?'&t='+Date.now():''),{headers:{accept:'application/json'},cache:'no-store'});if(!response.ok)throw new Error('API '+response.status);const payload=await response.json();if(payload.error)throw new Error(payload.error);crypto67State=payload;renderCrypto67('overview');if(status)status.textContent='● Live · updated '+new Date(payload.updatedAt||Date.now()).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});if(crypto67Timer)clearTimeout(crypto67Timer);crypto67Timer=setTimeout(()=>load67CryptoDashboard(false),300000)}catch(error){console.error('67 Crypto:',error);if(status)status.textContent='Connection unavailable';root.innerHTML='<div class="cryptoError67"><b>CoinGecko connection is unavailable right now.</b><br><br>67 will retry automatically. Check that <code>COINGECKO_DEMO_KEY</code> is configured as a Cloudflare secret and that <code>/api/crypto</code> is deployed with the site.</div>';if(crypto67Timer)clearTimeout(crypto67Timer);crypto67Timer=setTimeout(()=>load67CryptoDashboard(false),30000)}}
+document.addEventListener('DOMContentLoaded',()=>load67CryptoDashboard());
