@@ -1,17 +1,19 @@
-const ALLOWED_ORIGINS = new Set(['https://67royal.netlify.app','http://localhost:5173']);
+const ALLOWED_ORIGINS = new Set(['https://67royal.netlify.app','https://67.mel-m-ozturk.workers.dev','http://localhost:5173']);
 
-function json(statusCode, body, origin) {
+const SIDEKICK_SYSTEM = `You are 67 Sidekick, the friendly technical and product support assistant for 67 Royale. Help users with sign-in, Google authentication, profiles, posts, reactions, comments, Royale battles, ELO, Crypto, navigation, AI features, and technical problems. Be concise, calm and practical. Give numbered steps when troubleshooting. Never ask for passwords, API keys, recovery codes, payment card numbers, or other secrets. Do not claim to have changed an account or system unless the user has actually done it. If a problem needs human support, say so and explain what information is safe to provide. You are a support agent, not the main 67 AI product.`;
+
+function cors(origin) {
   return {
-    statusCode,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://67royal.netlify.app',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS'
-    },
-    body: JSON.stringify(body)
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://67royal.netlify.app',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'X-Content-Type-Options': 'nosniff'
   };
+}
+function json(statusCode, body, origin) {
+  return { statusCode, headers: cors(origin), body: JSON.stringify(body) };
 }
 
 exports.handler = async (event) => {
@@ -19,46 +21,51 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return json(204, {}, origin);
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method not allowed' }, origin);
 
-  const auth = event.headers?.authorization || event.headers?.Authorization || '';
-  if (!auth.startsWith('Bearer ')) return json(401, { error: 'Sign in required' }, origin);
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-  const groqKey = process.env.GROQ_API_KEY;
-  if (!supabaseUrl || !supabaseKey) return json(500, { error: 'Supabase server configuration is missing' }, origin);
-  if (!groqKey) return json(503, { error: 'AI provider is not connected yet. Add GROQ_API_KEY in Netlify environment variables.' }, origin);
-
-  const token = auth.slice(7);
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { Authorization: `Bearer ${token}`, apikey: supabaseKey }
-  });
-  if (!userResponse.ok) return json(401, { error: 'Invalid or expired session' }, origin);
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.error('67 Sidekick: OPENAI_API_KEY is missing from Netlify environment variables.');
+    return json(503, { error: 'Sidekick AI is not connected yet.' }, origin);
+  }
 
   let payload;
-  try { payload = JSON.parse(event.body || '{}'); } catch { return json(400, { error: 'Invalid JSON' }, origin); }
-  const input = typeof payload.input === 'string' ? payload.input.trim() : '';
-  if (!input || input.length > 4000) return json(400, { error: 'Input must be between 1 and 4000 characters' }, origin);
+  try { payload = JSON.parse(event.body || '{}'); }
+  catch { return json(400, { error: 'Invalid request.' }, origin); }
 
-  const messages = Array.isArray(payload.messages) ? payload.messages.slice(-10) : [];
+  const input = typeof payload.input === 'string' ? payload.input.trim().slice(0, 4000) : '';
+  if (!input) return json(400, { error: 'Please describe the issue you need help with.' }, origin);
+
+  const messages = Array.isArray(payload.messages) ? payload.messages.slice(-8) : [];
   const safeMessages = messages
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-    .map(m => ({ role: m.role, content: m.content.slice(0, 4000) }));
-  if (!safeMessages.length || safeMessages[safeMessages.length - 1].role !== 'user') safeMessages.push({ role: 'user', content: input });
+    .map(m => ({ role: m.role, content: m.content.slice(0, 2500) }));
+  if (!safeMessages.length || safeMessages[safeMessages.length - 1].role !== 'user') {
+    safeMessages.push({ role: 'user', content: input });
+  }
 
-  const aiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
-    body: JSON.stringify({
-      model: process.env.GROQ_MODEL || 'openai/gpt-oss-20b',
-      messages: [
-        { role: 'system', content: 'You are 67 AI, the fast meme-culture assistant inside 67 Royale. Be concise, current when supplied with current context, playful without being abusive, and clearly distinguish guesses from facts.' },
-        ...safeMessages
-      ],
-      temperature: 0.7,
-      max_tokens: 700
-    })
-  });
-  const result = await aiResponse.json().catch(() => ({}));
-  if (!aiResponse.ok) return json(502, { error: result?.error?.message || 'AI provider request failed' }, origin);
-  return json(200, { reply: result?.choices?.[0]?.message?.content || '', model: result?.model || process.env.GROQ_MODEL || 'openai/gpt-oss-20b' }, origin);
+  try {
+    const aiResponse = await fetch('https://api.openai.com/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey}`
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || 'gpt-5.6',
+        instructions: SIDEKICK_SYSTEM,
+        input: safeMessages,
+        max_output_tokens: 500
+      })
+    });
+
+    const result = await aiResponse.json().catch(() => ({}));
+    if (!aiResponse.ok) {
+      console.error('67 Sidekick OpenAI error:', aiResponse.status, JSON.stringify(result));
+      return json(502, { error: 'The Sidekick AI service is temporarily unavailable.' }, origin);
+    }
+
+    return json(200, { reply: result.output_text || 'I could not generate a response. Please try again.' }, origin);
+  } catch (error) {
+    console.error('67 Sidekick network error:', error);
+    return json(502, { error: 'The Sidekick connection is temporarily unavailable.' }, origin);
+  }
 };
