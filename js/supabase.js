@@ -2,16 +2,24 @@
 // Never put service-role or secret keys in this file.
 window.SUPABASE_URL = 'https://pbokbnixktqmmtigehul.supabase.co';
 window.SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_552EmITFZ9A7XDm1P43cWg_cbSWF_Vg';
+window.SITE_URL_67 = 'https://67royal.netlify.app';
 
 function get67AuthClient() {
-  if (!window.__67AuthClient) window.__67AuthClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_PUBLISHABLE_KEY);
+  if (!window.__67AuthClient) window.__67AuthClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_PUBLISHABLE_KEY, { auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true } });
   return window.__67AuthClient;
+}
+
+function get67RedirectUrl() {
+  const host = window.location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1';
+  const origin = isLocal ? window.location.origin : window.SITE_URL_67;
+  return new URL('/auth/callback.html', origin).toString();
 }
 
 window.start67GoogleAuth = async function () {
   try {
-    const redirectTo = new URL('/auth/callback.html', window.location.origin).toString();
-    const { error } = await get67AuthClient().auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+    const redirectTo = get67RedirectUrl();
+    const { error } = await get67AuthClient().auth.signInWithOAuth({provider:'google',options:{redirectTo, queryParams:{access_type:'offline',prompt:'select_account'}}});
     if(error) throw error;
   } catch(error){ console.error('67 Google sign-in failed:',error); if(typeof window.toast==='function') window.toast(error.message||'Google sign-in failed'); else alert(error.message||'Google sign-in failed'); }
 };
