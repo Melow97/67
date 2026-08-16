@@ -9,8 +9,11 @@ function get67AuthClient() {
 }
 
 window.start67GoogleAuth = async function () {
-  try { const { error } = await get67AuthClient().auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin}}); if(error) throw error; }
-  catch(error){ console.error('67 Google sign-in failed:',error); if(typeof window.toast==='function') window.toast(error.message||'Google sign-in failed'); else alert(error.message||'Google sign-in failed'); }
+  try {
+    const redirectTo = new URL('/auth/callback.html', window.location.origin).toString();
+    const { error } = await get67AuthClient().auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+    if(error) throw error;
+  } catch(error){ console.error('67 Google sign-in failed:',error); if(typeof window.toast==='function') window.toast(error.message||'Google sign-in failed'); else alert(error.message||'Google sign-in failed'); }
 };
 
 function inject67GoogleButton(){
